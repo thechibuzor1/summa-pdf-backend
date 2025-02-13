@@ -146,45 +146,25 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
+      temperature: 0,
       messages: [
         { 
           role: "user", 
           content: `
-            You are an expert educator. Your task is to create a **detailed and comprehensive study guide** based on the provided document. 
-            The study guide should be **well-structured, easy to understand, and optimized for deep learning.** It should break down complex ideas, 
-            provide real-world examples, and teach the material in an engaging way.         
-            
-            ### **Guidelines:**
-            1. **Structured Breakdown** – Organize content into clear sections that mirror the document’s structure.
-            2. **Concept Explanation** – Define key terms, principles, and ideas in a clear, detailed manner.
-            3. **Real-World Examples** – Include industry applications, case studies, and historical references.
-            4. **Diagrams & Visual Representation** – Suggest charts, bullet points, and tables for clarity (if applicable).
-            5. **Key Takeaways & Summaries** – Conclude each section with bullet points summarizing critical points.
-            6. **Practice Questions** – Provide exercises to reinforce learning.
-            7. **Common Mistakes & Misconceptions** – Highlight potential misunderstandings and clarify them.
-            8. **Comparisons** – Contrast theories, methodologies, or frameworks where necessary.
-            9. **Step-by-Step Processes** – If applicable, break down processes or frameworks into clear steps.
-            10. **Critical Thinking & Analysis** – Discuss strengths, weaknesses, and implications of key concepts.
-        
+            You are an expert educator. Your task is to generate a **detailed study guide, an extensive quiz set, and a large collection of flashcards** based on the provided document. 
+            **Prioritize high-quality quizzes and flashcards** while ensuring a structured summary.
+    
+            ### **Prioritization:**
+             **(HIGH PRIORITY)** Generate **LOTS of quiz questions** with various types (**MCQs, true/false, fill-in-the-blank, and short-answer**).  
+             **(HIGH PRIORITY)** Create **MANY flashcards** to reinforce key concepts.  
+             **(MEDIUM PRIORITY)** Provide a **concise summary with key takeaways** rather than long explanations.  
+             **(LOW PRIORITY)** Include a structured study guide that briefly outlines main topics with **comparisons, misconceptions, and real-world applications**.  
+    
             ### **Expected JSON Response Format:**
             \`\`\`json
             {
-              "study_guide": {
-                "sections": [
-                  {
-                    "title": "Section Title",
-                    "content": "Detailed explanation with structured breakdown...",
-                    "key_takeaways": ["Point 1", "Point 2", "Point 3"],
-                    "misconceptions": [
-                      {
-                        "misunderstanding": "Common misconception",
-                        "clarification": "Correct explanation"
-                      }
-                    ],
-                    "real_world_applications": ["Example 1", "Example 2"],
-                    "diagrams": ["Suggested Diagram 1", "Suggested Table 2"]
-                  }
-                ]
+              "summary": {
+                "key_points": ["Key point 1", "Key point 2", "Key point 3"]
               },
               "flashcards": [
                 {
@@ -215,29 +195,28 @@ app.post("/upload", upload.single("file"), async (req, res) => {
                   }
                 ]
               },
-              "adaptive_learning": {
-                "difficulty_analysis": "Based on the content, this topic is classified as Easy/Medium/Hard.",
-                "recommended_review_topics": ["Topic A", "Topic B"],
-                "suggested_resources": ["Book/Article Link", "Video"]
-              },
-              "collaboration_tools": {
-                "discussion_prompts": [
-                  "How does XYZ relate to real-world problems?",
-                  "What are the advantages and disadvantages of ABC?"
-                ],
-                "group_exercises": [
-                  "Form teams and debate the impact of XYZ.",
-                  "Work together to create a mind map of ABC."
+              "study_guide": {
+                "sections": [
+                  {
+                    "title": "Main Topic",
+                    "summary": "Short explanation with key takeaways.",
+                    "comparisons": [
+                      { "concept_a": "Concept A", "concept_b": "Concept B", "difference": "How they differ" }
+                    ],
+                    "real_world_applications": ["Example 1", "Example 2"],
+                    "common_misconceptions": [
+                      { "misunderstanding": "Misconception", "clarification": "Correct explanation" }
+                    ]
+                  }
                 ]
-              },
-              "contextual_enhancements": {
-                "visual_aids": ["Graph, Chart, Diagram recommendations"],
-                "historical_context": "Background information on how XYZ evolved.",
-                "real_world_examples": ["Example 1", "Example 2"]
               }
             }
             \`\`\`
-            
+    
+            **Ensure the JSON output contains a large number of quiz questions and flashcards!**  
+            The summary should be clear but concise.  
+            The study guide should be structured but not overly detailed.  
+    
             ### **Document Content:**
             ${cleanedText.substring(0, 30000)}
           `
@@ -247,8 +226,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     });
     
     
-    
-
     const summary = completion.choices[0].message.content;
     cache.set(cleanedText, summary);
 
