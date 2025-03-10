@@ -10,11 +10,11 @@ const fs = require("fs");
 const mammoth = require("mammoth");
 const textract = require("textract");
 const pdfjsLib = require("pdfjs-dist");
-const axios = require("axios"); // ✅ Used for Gemini API requests
+const axios = require("axios"); 
 
 const app = express();
 const port = process.env.PORT || 5000;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // ✅ Replace OpenAI key with Gemini API key
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
 
 app.use(cors());
 app.use(express.json());
@@ -23,6 +23,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const cache = new Map();
 
 function cleanText(text) {
+  if (!text) return "";
   return text
     .replace(/\n+/g, "\n")
     .replace(/([a-z])([A-Z])/g, "$1 $2")
@@ -33,6 +34,7 @@ function cleanText(text) {
     .replace(/\s{2,}/g, " ")
     .trim();
 }
+
 
 async function isScannedPDF(buffer) {
   const uint8Array = new Uint8Array(buffer);
@@ -50,20 +52,21 @@ async function isScannedPDF(buffer) {
   return results.every(content => content.items.length === 0);
 }
 
+
 async function extractTextPDF(buffer) {
   try {
     const data = await pdfParse(buffer);
-    return data.text.trim();
+    return data.text ? data.text.trim() : "";
   } catch (error) {
     console.error("Error extracting text from PDF:", error);
-    return null;
+    return "";
   }
 }
 
 async function extractTextFromImages(imageBuffer) {
   try {
     const processedImageBuffer = await sharp(imageBuffer)
-      .resize({ width: 1000 })
+      .resize({ width: 1024 })
       .grayscale()
       .normalize()
       .toFormat("png")
@@ -75,31 +78,32 @@ async function extractTextFromImages(imageBuffer) {
     const { data } = await Tesseract.recognize(tempImagePath, "eng");
     fs.unlinkSync(tempImagePath);
 
-    return data.text;
+    return data.text ? data.text.trim() : "";
   } catch (error) {
     console.error("Error in OCR:", error);
-    return null;
+    return "";
   }
 }
 
 async function extractTextDOCX(buffer) {
   try {
     const { value } = await mammoth.extractRawText({ buffer });
-    return value.trim();
+    return value ? value.trim() : "";
   } catch (error) {
     console.error("Error extracting text from DOCX:", error);
-    return null;
+    return "";
   }
 }
+
 
 async function extractTextFromOtherDocs(filePath) {
   return new Promise((resolve, reject) => {
     textract.fromFileWithPath(filePath, (error, text) => {
       if (error) {
         console.error("Error extracting text:", error);
-        reject(null);
+        reject(error);
       } else {
-        resolve(text.trim());
+        resolve(text ? text.trim() : "");
       }
     });
   });
