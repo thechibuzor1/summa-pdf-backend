@@ -65,25 +65,34 @@ async function extractTextPDF(buffer) {
 
 async function extractTextFromImages(imageBuffer) {
   try {
+    // Ensure buffer contains an actual image
+    const metadata = await sharp(imageBuffer).metadata();
+    if (!metadata.format) {
+      throw new Error("Unsupported image format");
+    }
+
+    // Process image for better OCR accuracy
     const processedImageBuffer = await sharp(imageBuffer)
       .resize({ width: 1024 })
       .grayscale()
       .normalize()
-      .toFormat("png")
+      .toFormat("png") // Ensure it's in a supported format
       .toBuffer();
 
     const tempImagePath = `./temp_images/ocr_${Date.now()}.png`;
     fs.writeFileSync(tempImagePath, processedImageBuffer);
 
+    // Run OCR
     const { data } = await Tesseract.recognize(tempImagePath, "eng");
     fs.unlinkSync(tempImagePath);
 
     return data.text ? data.text.trim() : "";
   } catch (error) {
-    console.error("Error in OCR:", error);
+    console.error("Error in OCR:", error.message);
     return "";
   }
 }
+
 
 async function extractTextDOCX(buffer) {
   try {
